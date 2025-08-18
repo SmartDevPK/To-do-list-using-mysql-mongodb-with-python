@@ -1,6 +1,10 @@
 import mysql.connector
 from config import MYSQL_CONFIG
 
-mysql_conn = mysql.connector.connect(MYSQL_CONFIG)
-mysql_cursor = mysql_conn.cursor()
-
+def get_mysql_connection():
+    """
+    Returns a MySQL connection and cursor
+    """
+    conn = mysql.connector.connect(**MYSQL_CONFIG)
+    cursor = conn.cursor()
+    return conn, cursor

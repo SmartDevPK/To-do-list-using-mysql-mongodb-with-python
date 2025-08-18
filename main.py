@@ -1,13 +1,18 @@
 from flask import Flask
+from routes.auth_routes import auth_bp  # Make sure your file is named auth_routes.py
 
-#Create Flask Application
-app = Flask (__name__)
+# -------------------------------
+# Create Flask Application
+# -------------------------------
+app = Flask(__name__)
 
-#Define a route
-@app.route('/')
-def home ():
-    return "Hello Flask is Working"
+# -------------------------------
+# Register Blueprints / Routes
+# -------------------------------
+app.register_blueprint(auth_bp)
 
-#Run The App
+# -------------------------------
+# Run the App
+# -------------------------------
 if __name__ == "__main__":
     app.run(debug=True)
