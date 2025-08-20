@@ -1,8 +1,8 @@
 # MySQL Configuration
 DB_HOST = "localhost"
 DB_USER = "root"
-DB_PASSWORD = "your_password"
-DB_NAME = "your_database"
+DB_PASSWORD = ""
+DB_NAME = "todolist"
 DB_PORT = 3307
 
 # MongoDB Configuration

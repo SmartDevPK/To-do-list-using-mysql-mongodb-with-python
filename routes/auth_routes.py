@@ -4,6 +4,7 @@ from models.user_models import register_user  # Ensure the file is user_models.p
 # Create Blueprint
 auth_bp = Blueprint("auth_bp", __name__)
 
+
 # Register Page (GET)
 @auth_bp.route("/register", methods=['GET'])
 def register_page():
@@ -13,9 +14,7 @@ def register_page():
     return render_template("register.html")
 
 
-# -------------------------------
 # Register Action (POST)
-# -------------------------------
 @auth_bp.route("/register", methods=['POST'])
 def register_action():
     """
@@ -25,38 +24,22 @@ def register_action():
     email = request.form.get("email")
     password = request.form.get("password")
     
+    # Validate form
     if not username or not email or not password:
         flash("All fields are required!", "error")
-        return redirect(url_for("login.html"))
+        return redirect(url_for("auth_bp.login"))  
     
     # Call model function to register user
     register_user(username, email, password)
     
     flash("User registered successfully!", "success")
-    return redirect(url_for("login.html"))  # Or redirect to login page
+    return redirect(url_for("auth_bp.login"))  
 
 
-# -------------------------------
-# Optional Login Route
-# -------------------------------
-# from models.user_models import login_user
-#
-# @auth_bp.route("/login", methods=["GET", "POST"])
-# def login():
-#     if request.method == "POST":
-#         email = request.form.get("email")
-#         password = request.form.get("password")
-#         
-#         if not email or not password:
-#             flash("Email and password are required", "error")
-#             return redirect(url_for("auth_bp.login"))
-#         
-#         user = login_user(email, password)
-#         if user:
-#             flash("Login successful!", "success")
-#             return redirect(url_for("dashboard"))  # Replace with your dashboard route
-#         else:
-#             flash("Invalid email or password", "error")
-#             return redirect(url_for("auth_bp.login"))
-#     
-#     return render_template("login.html")
+# Login Page (GET)
+@auth_bp.route("/login", methods=['GET'])
+def login():
+    """
+    Render the login page.
+    """
+    return render_template("login.html")
