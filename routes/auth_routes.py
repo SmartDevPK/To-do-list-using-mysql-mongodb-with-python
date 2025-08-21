@@ -80,3 +80,14 @@ def dashboard():
     if "email" not in session:
         return redirect(url_for("auth_bp.login"))
     return render_template("dashboard.html", username=session.get("username"))  
+
+# Logout Action
+@auth_bp.route("/logout")
+def logout():
+    """
+    Handle user logout.
+    """
+    session.pop("email", None)
+    session.pop("username", None)
+    flash("You have been logged out successfully.", "info")
+    return redirect(url_for("auth_bp.login"))
