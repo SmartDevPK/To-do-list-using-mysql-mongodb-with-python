@@ -72,3 +72,11 @@ def login_action():
             return redirect(url_for("auth_bp.login"))
         
     return  render_template("login.html")
+
+
+# Dashboard Page (GET)
+@auth_bp.route("/dashboard")
+def dashboard():
+    if "email" not in session:
+        return redirect(url_for("auth_bp.login"))
+    return render_template("dashboard.html", username=session.get("username"))  
