@@ -2,3 +2,11 @@ config.php
 main.py
 vscode
 models
+.env
+.gitignore
+README.md
+requirements.txt
+db
+tests
+static
+templates
