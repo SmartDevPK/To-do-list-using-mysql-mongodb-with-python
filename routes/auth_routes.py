@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
-from models.user_models import is_strong_password, register_user  
+from models.user_models import is_strong_password, register_user,login_user,session  
 
 # Create Blueprint
 auth_bp = Blueprint("auth_bp", __name__)
@@ -54,3 +54,21 @@ def login():
     Render the login page.
     """
     return render_template("login.html")
+# Login Action (POST)
+@auth_bp.route("/login", methods=['POST'])
+def login_action():
+    if request.method == 'POST':
+        email = request.form["email"]
+        password = request.form["password"]
+        
+        
+        user = login_user(email, password)
+        if user:
+            session['email'] = user['email']
+            session['username'] = user['username']
+            return redirect(url_for("dashboard"))
+        else:
+            flash("Invalid email or password", "error")
+            return redirect(url_for("auth_bp.login"))
+        
+    return  render_template("login.html")
