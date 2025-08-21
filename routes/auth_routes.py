@@ -1,9 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
-from models.user_models import register_user  # Ensure the file is user_models.py
+from models.user_models import is_strong_password, register_user  
 
 # Create Blueprint
 auth_bp = Blueprint("auth_bp", __name__)
-
 
 # Register Page (GET)
 @auth_bp.route("/register", methods=['GET'])
@@ -12,7 +11,6 @@ def register_page():
     Render the registration page.
     """
     return render_template("register.html")
-
 
 # Register Action (POST)
 @auth_bp.route("/register", methods=['POST'])
@@ -24,17 +22,30 @@ def register_action():
     email = request.form.get("email")
     password = request.form.get("password")
     
-    # Validate form
+    # Validate form fields
     if not username or not email or not password:
         flash("All fields are required!", "error")
-        return redirect(url_for("auth_bp.login"))  
+        return redirect(url_for("auth_bp.register_page"))
     
-    # Call model function to register user
-    register_user(username, email, password)
+    # Check password strength
+    if not is_strong_password(password):
+        flash(
+            "Your password is weak! It should be at least 9 characters and include "
+            "uppercase, lowercase, digits, and symbols.",
+            "warning"
+        )
+        # Stop here: let the user choose a stronger password
+        return redirect(url_for("auth_bp.register_page"))
     
-    flash("User registered successfully!", "success")
-    return redirect(url_for("auth_bp.login"))  
-
+    # Register user
+    success, _ = register_user(username, email, password)
+    
+    if success:
+        flash("User registered successfully! Please login.", "success")
+        return redirect(url_for("auth_bp.login"))
+    else:
+        flash("Registration failed! Email may already be used.", "error")
+        return redirect(url_for("auth_bp.register_page"))
 
 # Login Page (GET)
 @auth_bp.route("/login", methods=['GET'])
