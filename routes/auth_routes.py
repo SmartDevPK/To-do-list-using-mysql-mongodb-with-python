@@ -1,28 +1,21 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session
-from models.user_models import is_strong_password, register_user, login_user, reset_password
-from models.send_reset_email import send_reset_email
-from itsdangerous import URLSafeTimedSerializer
 import os
-# -------------------------------
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
+from models.user_models import is_strong_password, register_user, login_user, reset_password, get_user_by_email
+from models.send_reset_email import send_reset_email
+
 # Create Blueprint
-# -------------------------------
 auth_bp = Blueprint("auth_bp", __name__)
 
 
-# -------------------------------
 # Register Page (GET)
-# -------------------------------
 @auth_bp.route("/register", methods=['GET'])
 def register_page():
     """Render the registration page."""
     return render_template("register.html")
 
 
-
-
-# -------------------------------
 # Register Action (POST)
-# -------------------------------
 @auth_bp.route("/register", methods=['POST'])
 def register_action():
     """Handle registration form submission."""
@@ -51,18 +44,14 @@ def register_action():
         return redirect(url_for("auth_bp.register_page"))
 
 
-# -------------------------------
 # Login Page (GET)
-# -------------------------------
 @auth_bp.route("/login", methods=['GET'])
 def login():
     """Render the login page."""
     return render_template("login.html")
 
 
-# -------------------------------
 # Login Action (POST)
-# -------------------------------
 @auth_bp.route("/login", methods=['POST'])
 def login_action():
     """Handle login form submission."""
@@ -73,15 +62,13 @@ def login_action():
     if user:
         session['email'] = user['email']
         session['username'] = user['username']
-        return redirect(url_for("auth_bp.dashboard"))  # Ensure this route exists
+        return redirect(url_for("auth_bp.dashboard"))
     else:
         flash("Invalid email or password", "error")
         return redirect(url_for("auth_bp.login"))
 
 
-# -------------------------------
 # Dashboard Page (GET)
-# -------------------------------
 @auth_bp.route("/dashboard")
 def dashboard():
     """Render dashboard page for logged-in users."""
@@ -90,9 +77,7 @@ def dashboard():
     return render_template("dashboard.html", username=session.get("username"))
 
 
-# -------------------------------
 # Logout Action
-# -------------------------------
 @auth_bp.route("/logout")
 def logout():
     """Handle user logout."""
@@ -102,50 +87,81 @@ def logout():
     return redirect(url_for("auth_bp.login"))
 
 
-
-#generate rest token
+# Generate Reset Token
 def generate_reset_token(email):
-    """
-    Generate a secure password reset link for a given email.
-    """
-    secret_key = os.getenv('SECRET_KEY')  # Load your secret key from .env
+    """Generate a secure password reset link for a given email."""
+    secret_key = os.getenv('SECRET_KEY')
     s = URLSafeTimedSerializer(secret_key)
     token = s.dumps(email, salt='password-reset-salt')
     reset_link = url_for('auth_bp.reset_password_route', token=token, _external=True)
     return reset_link
 
 
-# -------------------------------
-# Forgot / Reset Password Route
-# -------------------------------
+# Forgot Password Route
 @auth_bp.route("/forgot_password", methods=['GET', 'POST'])
 def forgot_password():
-    """
-    Render the forgot password page and handle reset link requests.
-    """
+    """Render forgot password page and handle reset link requests."""
     if request.method == 'POST':
         email = request.form.get("email")
-
         if not email:
             flash("Please enter your email.", "warning")
             return redirect(url_for("auth_bp.forgot_password"))
-        
+
+        # Check if user exists
+        user = get_user_by_email(email)
+        if not user:
+            flash("Email not found.", "danger")
+            return redirect(url_for("auth_bp.forgot_password"))
+
         # Generate reset link
         reset_link = generate_reset_token(email)
 
-        # Send reset link via email
+        # Send email
         if send_reset_email(email, reset_link):
             flash("A reset link has been sent to your email.", "success")
         else:
-            flash("Email not found or error sending email.", "danger")
+            flash("Error sending email. Please try again.", "danger")
 
         return redirect(url_for("auth_bp.forgot_password"))
 
-    # GET request – render the forgot password form
     return render_template("forgot_password.html")
-    
-   
-    
 
-    # GET request
-    return render_template("forgot_password.html")
+
+# Reset Password Route
+@auth_bp.route("/reset_password/<token>", methods=['GET', 'POST'])
+def reset_password_route(token):
+    """Handle password reset using a secure token."""
+    secret_key = os.getenv('SECRET_KEY')
+    s = URLSafeTimedSerializer(secret_key)
+
+    try:
+        email = s.loads(token, salt='password-reset-salt', max_age=3600)
+    except SignatureExpired:
+        flash("The reset link has expired. Please request a new one.", "warning")
+        return redirect(url_for("auth_bp.forgot_password"))
+    except BadSignature:
+        flash("Invalid reset link.", "danger")
+        return redirect(url_for("auth_bp.forgot_password"))
+
+    if request.method == 'POST':
+        new_password = request.form.get("password")
+        confirm_password = request.form.get("confirm_password")
+
+        if not new_password or not confirm_password:
+            flash("Please fill out all fields.", "warning")
+            return redirect(url_for("auth_bp.reset_password_route", token=token))
+
+        if new_password != confirm_password:
+            flash("Passwords do not match.", "warning")
+            return redirect(url_for("auth_bp.reset_password_route", token=token))
+
+        # Update password in database
+        success = reset_password(email, new_password)
+        if success:
+            flash("Your password has been reset successfully. Please login.", "success")
+            return redirect(url_for("auth_bp.login"))
+        else:
+            flash("Error resetting password. Please try again.", "danger")
+            return redirect(url_for("auth_bp.reset_password_route", token=token))
+
+    return render_template("reset_password.html", token=token)
