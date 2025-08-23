@@ -69,6 +69,7 @@
             <input type="email" name="email" placeholder="Email" required>
             <input type="password" name="password" placeholder="Password" required>
             <button type="submit">Register</button>
+            <p>Already have an account? <a href="{{ url_for('auth_bp.login') }}">Login</a></p>
         </form>
     </div>
 </body>
