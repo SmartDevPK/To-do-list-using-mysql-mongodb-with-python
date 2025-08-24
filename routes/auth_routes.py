@@ -1,7 +1,7 @@
 import os
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session, jsonify
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-from models.user_models import is_strong_password, register_user, login_user, reset_password, get_user_by_email
+from models.user_models import is_strong_password, register_user, login_user, reset_password, get_user_by_email,create_task,get_all_tasks
 from models.send_reset_email import send_reset_email
 
 # Create Blueprint
@@ -165,3 +165,20 @@ def reset_password_route(token):
             return redirect(url_for("auth_bp.reset_password_route", token=token))
 
     return render_template("reset_password.html", token=token)
+
+#Route to create new tasks
+# Route for handling GET & POST in one function
+@auth_bp.route("/tasks", methods=['GET', 'POST'])
+def tasks():
+    if request.method == 'POST':
+        data = request.get_json()
+        title = data.get("title")
+        description = data.get("description")
+        status = data.get("status", "pending")
+
+        task_id = create_task(title, description, status)
+        return jsonify({"message": "Task created", "task_id": task_id}), 201
+
+    elif request.method == 'GET':
+        tasks = get_all_tasks()
+        return jsonify(tasks), 200
