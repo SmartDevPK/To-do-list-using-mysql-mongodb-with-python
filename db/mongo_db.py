@@ -1,11 +1,26 @@
-# from pymongo import MongoClient
-# from config import MONGO_CONFIG
+from db.mongo_db import get_mongo_connection
+import config
 
-# # Create a single MongoClient
-# mongo_client = MongoClient(MONGO_CONFIG['uri'])
+#initialize mongodb using the config file
+mongo_client  = get_mongo_connection(config.MONGO_URI)
+db = mongo_client[config.MONGO_DB_NAME]
 
-# # Access the database
-# mongo_db = mongo_client[MONGO_CONFIG['db_name']]
+#User collection
+user = db['users']
 
-# # Access the collection
-# mongo_collection = mongo_db(MONGO_CONFIG['collection_name'])
+#Task collection
+def create_task(title: str, description:str, status:str="pendinf"):
+  """ Insert a new task with title, description status and date"""
+  task = {
+        title: title,
+        description: description,
+        status: status
+    }
+  
+  result = user.insert_one(task)
+  return str(result.inserted_id)
+
+#Function to get all tasks
+def get_all_tasks():
+    """ Retrieve all tasks from the collection"""
+    return list(user.find())

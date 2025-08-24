@@ -6,8 +6,5 @@ DB_NAME = "todolist"
 DB_PORT = 3307
 
 # MongoDB Configuration
-# MONGO_CONFIG = {
-#     "uri": "mongodb://localhost:27017/",   
-#     "db_name": "TODOLIST",                 
-#     "collection_name": "users"             
-# }
+MONGO_URI = "mongodb://localhost:27017/"
+MONGO_DB_NAME = "todolist"
