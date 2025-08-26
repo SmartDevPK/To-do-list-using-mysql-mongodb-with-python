@@ -6,8 +6,8 @@ from flask import (
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from models.user_models import (
     is_strong_password, register_user, login_user, reset_password,tasks_collection,
-    get_user_by_email, create_task, get_all_tasks,
-    edit_task_by_id, edit_task 
+    get_user_by_email, create_task,
+    edit_task_by_id, edit_task, delete_task
 )
 from models.Email_sending import sending_welcome_email
 from models.send_reset_email import send_reset_email
@@ -161,9 +161,7 @@ def reset_password_route(token):
 
     return render_template("reset_password.html", token=token)
 
-# ------------------------------
 # Task Routes
-# ------------------------------
 @auth_bp.route("/tasks", methods=['GET', 'POST'])
 def tasks():
     if "email" not in session:
@@ -222,4 +220,17 @@ def edit_task_submit(task_id):
     else:
         flash("Failed to update task. Try again.", "danger")
 
+    return redirect(url_for("auth_bp.tasks"))
+
+#delete task route
+@auth_bp.route("/delete_task/<task_id>", methods=["POST"])
+def delete_task_route(task_id):
+    if "email" not in session:
+        flash("please login first.", "warning")
+        return redirect(url_for("auth_bp.login"))
+    success = delete_task(task_id)
+    if success:
+        flash("Task deleted successfully.", "success")
+    else:
+        flash("Failed to delete task. Try again.", "danger")
     return redirect(url_for("auth_bp.tasks"))
